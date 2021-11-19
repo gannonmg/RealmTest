@@ -24,39 +24,25 @@ struct RealmManager {
     static let shared = RealmManager()
     private init() {}
     
-    let queue = DispatchQueue(label: "realm-queue")
-    let realm = try! Realm()
-    
     func addFacts(_ facts: [DogFact]) {
-        queue.async {
-            try! realm.write {
+        do {
+            let realm = try Realm()
+            try realm.write {
                 realm.add(facts)
             }
-        }
-    }
-    
-    func deleteFact(_ fact: DogFact) {
-        queue.async {
-            try! realm.write {
-                realm.delete(fact)
-            }
-        }
-    }
-    
-    func deleteMultiple(facts: Results<DogFact>) {
-        queue.async {
-            try! realm.write {
-                realm.delete(facts)
-            }
+        } catch {
+            print("Failed to add facts")
         }
     }
     
     func deleteAllFacts() {
-        queue.async {
-            let thawedRealm = realm.thaw()
-            try! thawedRealm.write {
-                thawedRealm.deleteAll()
+        do {
+            let realm = try Realm()
+            try realm.write {
+                realm.deleteAll()
             }
+        } catch {
+            print("Failed to deleteAll()")
         }
     }
     
@@ -94,7 +80,6 @@ struct APIManager {
 
 struct ContentView: View {
     
-//    @State var facts: [DogFact] = []
     @ObservedResults(DogFact.self) var facts
     
     var body: some View {
@@ -102,7 +87,7 @@ struct ContentView: View {
             Button("Get Dog Facts", action: buttonPressed)
             Button("Delete Facts", action: deletePressed)
             SwiftUI.List {
-                ForEach(facts) { fact in
+                ForEach(facts.freeze()) { fact in
                     Text(fact.fact)
                 }
             }
@@ -118,7 +103,6 @@ struct ContentView: View {
     
     func deletePressed() {
         RealmManager.shared.deleteAllFacts()
-//        RealmManager.shared.deleteMultiple(facts: facts)
     }
     
 }
