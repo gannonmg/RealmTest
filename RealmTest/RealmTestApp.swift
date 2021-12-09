@@ -11,7 +11,8 @@ import SwiftUI
 struct RealmTestApp: App {
     var body: some Scene {
         WindowGroup {
-            RTTabView()
+//            RTTabView()
+            ContentView()
         }
     }
 }

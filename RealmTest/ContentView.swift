@@ -5,6 +5,7 @@
 //  Created by Matt Gannon on 11/18/21.
 //
 
+import Combine
 import RealmSwift
 import SwiftUI
 
@@ -78,16 +79,41 @@ struct APIManager {
     
 }
 
+class ContentViewModel: ObservableObject {
+    
+    @ObservedResults(DogFact.self) private var factsResults
+    @Published private(set) var facts:[DogFact] = []
+    var factsCancellable: AnyCancellable?
+    
+    init() {
+
+        factsCancellable = factsResults.collectionPublisher
+            .subscribe(on: DispatchQueue.main)
+            .sink { errors in
+                print("Errors are \(errors)")
+            } receiveValue: { results in
+                let indexSet = IndexSet(integersIn: 0..<results.endIndex)
+                self.facts = results.objects(at: indexSet)
+            }
+    }
+    
+    deinit {
+        factsCancellable?.cancel()
+        factsCancellable = nil
+    }
+    
+}
+
 struct ContentView: View {
     
-    @ObservedResults(DogFact.self) var facts
+    @StateObject var viewModel: ContentViewModel = ContentViewModel()
     
     var body: some View {
         VStack {
             Button("Get Dog Facts", action: buttonPressed)
             Button("Delete Facts", action: deletePressed)
             SwiftUI.List {
-                ForEach(facts.freeze()) { fact in
+                ForEach(viewModel.facts) { fact in
                     Text(fact.fact)
                 }
             }
